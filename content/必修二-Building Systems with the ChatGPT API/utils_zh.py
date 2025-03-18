@@ -1,143 +1,143 @@
-   
+import os
 import json
-import openai
+from openai import OpenAI
 from collections import defaultdict
 
+
+from openai import OpenAI
+
+from dotenv import load_dotenv, find_dotenv
+_ = load_dotenv(find_dotenv()) 
+
+openai_api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=openai_api_key)
+
 # 商品和目录的数据文件
-products_file = 'products.json'
+products_file = 'products_zh.json'
 categories_file = 'categories.json'
 
 # 分隔符
 delimiter = "####"
 # 第二步（抽取商品）系统信息文本
 step_2_system_message_content = f"""
-您将获得一次客户服务对话。最近的用户查询将使用{delimiter}字符进行分隔。
+    你将提供服务查询。
+    服务查询将使用{delimiter}字符分隔。
 
-输出一个Python对象列表，其中每个对象具有以下格式：
-'category': <包括以下几个类别：Computers and Laptops、martphones and Accessories、elevisions and Home Theater Systems、elevisions and Home Theater Systems、elevisions and Home Theater Systems、'category': <包括以下几个类别：Computers and Laptops、martphones and Accessories、elevisions and Home Theater Systems、elevisions and Home Theater Systems、elevisions and Home Theater Systems、相机和摄像机>,
-或者
-'products': <必须是下面的允许产品列表中找到的产品>
+    仅输出一个 Python 对象列表，其中每个对象具有以下格式：
+        'category': <计算机和笔记本电脑、智能手机和配件、电视和家庭影院系统、游戏机和配件、音频设备、相机和摄像机>中的一个,
+    或者
+        'products': <必须是在下面的允许产品列表中找到的产品>
 
-类别和产品必须在客户服务查询中找到。
-如果提到了产品，它必须与下面的允许产品列表中的正确类别相关联。
-如果未找到任何产品或类别，请输出一个空列表。
-只列出之前对话的早期部分未提及和讨论的产品和类别。
+    类别和产品必须在客户输入中找到。
+    如果提及了产品，则必须将其与允许产品列表中的正确类别相关联。
+    如果未找到产品或类别，则输出空列表。
 
-允许的产品：
+    允许的产品：
 
-Computers and Laptops类别：
-TechPro Ultrabook
-BlueWave Gaming Laptop
-PowerLite Convertible
-TechPro Desktop
-BlueWave Chromebook
+    计算机和笔记本电脑类别：
+    TechPro Ultrabook
+    BlueWave Gaming Laptop
+    PowerLite Convertible
+    TechPro Desktop
+    BlueWave Chromebook
 
-Smartphones and Accessories类别：
-SmartX ProPhone
-MobiTech PowerCase
-SmartX MiniPhone
-MobiTech Wireless Charger
-SmartX EarBuds
+    智能手机和配件类别：
+    SmartX ProPhone
+    MobiTech PowerCase
+    SmartX MiniPhone
+    MobiTech Wireless Charger
+    SmartX EarBuds
 
-Televisions and Home Theater Systems类别：
-CineView 4K TV
-SoundMax Home Theater
-CineView 8K TV
-SoundMax Soundbar
-CineView OLED TV
+    电视和家庭影院系统类别：
+    CineView 4K TV
+    SoundMax Home Theater
+    CineView 8K TV
+    SoundMax Soundbar
+    CineView OLED TV
 
-Gaming Consoles and Accessories类别：
-GameSphere X
-ProGamer Controller
-GameSphere Y
-ProGamer Racing Wheel
-GameSphere VR Headset
+    游戏机和配件类别：
+    GameSphere X
+    ProGamer Controller
+    GameSphere Y
+    ProGamer Racing Wheel
+    GameSphere VR Headset
 
-Audio Equipment类别：
-AudioPhonic Noise-Canceling Headphones
-WaveSound Bluetooth Speaker
-AudioPhonic True Wireless Earbuds
-WaveSound Soundbar
-AudioPhonic Turntable
+    音频设备类别：
+    AudioPhonic Noise-Canceling Headphones
+    WaveSound Bluetooth Speaker
+    AudioPhonic True Wireless Earbuds
+    WaveSound Soundbar
+    AudioPhonic Turntable
 
-Cameras and Camcorders类别：
-FotoSnap DSLR Camera
-ActionCam 4K
-FotoSnap Mirrorless Camera
-ZoomMaster Camcorder
-FotoSnap Instant Camera
+    相机和摄像机类别：
+    FotoSnap DSLR Camera
+    ActionCam 4K
+    FotoSnap Mirrorless Camera
+    ZoomMaster Camcorder
+    FotoSnap Instant Camera
 
-只输出对象列表，不包含其他内容。
+    仅输出 Python 对象列表，不包含其他字符信息。
 """
 
 step_2_system_message = {'role':'system', 'content': step_2_system_message_content}    
 
 # 第四步（生成用户回答）的系统信息
 step_4_system_message_content = f"""
-    你是一家大型电子商店的客户服务助理。
-    以友好和乐于助人的语气回答，回答保持简洁明了。
-    确保让用户提出相关的后续问题。
+    您是一家大型电子商店的客服助理。
+    请以友好和乐于助人的口吻回答用户的问题，并尽量简洁明了。
+    解答用户的问题后，请确保向用户提出相关的后续问题。
 """
 
 step_4_system_message = {'role':'system', 'content': step_4_system_message_content}    
 
 # 第六步（验证模型回答）的系统信息
 step_6_system_message_content = f"""
-    你是一个助手，评估客户服务代理的回答是否足够回答客户的问题，并验证助手从产品信息中引用的所有事实是否正确。
-    对话历史、产品信息、用户和客户服务代理的消息将用```进行分隔。
-    请用一个字母回答，不带标点符号：
-    Y - 如果输出足够回答问题，并且回答正确使用了产品信息
-    N - 输出不足够回答问题，或者没有正确使用产品信息
+    您是一个助理，用于评估客服代理的回复是否充分回答了客户问题，\
+    并验证助理从产品信息中引用的所有事实是否正确。 
+    产品信息、用户和客服代理的信息将使用三个反引号（即 ```)\
+    进行分隔。 
+    请以 Y 或 N 的字符形式进行回复，不要包含标点符号：\
+    Y - 如果输出充分回答了问题并且回复正确地使用了产品信息\
+    N - 其他情况。
 
-    只输出一个字母。
+    仅输出单个字母。
 """
 
 step_6_system_message = {'role':'system', 'content': step_6_system_message_content}    
 
 # 使用 ChatCompletion 接口
-def get_completion_from_messages(messages, model="gpt-3.5-turbo", temperature=0, max_tokens=500):
-    response = openai.ChatCompletion.create(
-        model=model,
+def get_completion_from_messages(messages, 
+                                 model ="gpt-4o-mini", 
+                                 temperature=0, 
+                                 max_tokens=500):
+    '''
+    封装一个支持更多参数的自定义访问 gpt-4o-mini的函数
+
+    参数: 
+    messages: 这是一个消息列表，每个消息都是一个字典，包含 role(角色）和 content(内容)。角色可以是'system'、'user' 或 'assistant’，内容是角色的消息。
+    model: 调用的模型，默认为gpt-4o-mini(ChatGPT)
+    temperature: 这决定模型输出的随机程度，默认为0，表示输出将非常确定。增加温度会使输出更随机。
+    max_tokens: 这决定模型输出的最大的 token 数。
+    '''
+    response = client.chat.completions.create(
+        model= model,
         messages=messages,
-        temperature=temperature, 
-        max_tokens=max_tokens, 
+        temperature=temperature, # 这决定模型输出的随机程度
+        max_tokens=max_tokens, # 这决定模型输出的最大的 token 数
     )
-    return response.choices[0].message["content"]
-
-# 创建目录（如果没有本地目录文件，需要创建一份）
-def create_categories():
-    categories_dict = {
-      'Billing': [
-                'Unsubscribe or upgrade',
-                'Add a payment method',
-                'Explanation for charge',
-                'Dispute a charge'],
-      'Technical Support':[
-                'General troubleshooting',
-                'Device compatibility',
-                'Software updates'],
-      'Account Management':[
-                'Password reset',
-                'Update personal information',
-                'Close account',
-                'Account security'],
-      'General Inquiry':[
-                'Product information',
-                'Pricing',
-                'Feedback',
-                'Speak to a human']
-    }
-
-    with open(categories_file, 'w') as file:
-        json.dump(categories_dict, file)
-        
-    return categories_dict
+    return response.choices[0].message.content
 
 # 获取目录数据
 def get_categories():
     with open(categories_file, 'r') as file:
             categories = json.load(file)
     return categories
+
+# 获取商品数据
+def get_products():
+    with open(products_file, 'r') as file:
+        products = json.load(file)
+    return products
 
 # 获取商品列表
 def get_product_list():
@@ -150,6 +150,9 @@ def get_product_list():
         product_list.append(product)
     
     return product_list
+
+
+
 
 # 获取商品和目录
 def get_products_and_category():
@@ -165,11 +168,6 @@ def get_products_and_category():
     
     return dict(products_by_category)
 
-# 从商品数据中获取
-def get_products():
-    with open(products_file, 'r') as file:
-        products = json.load(file)
-    return products
 
 # 从用户问题中抽取商品和类别
 def find_category_and_product(user_input,products_and_category):

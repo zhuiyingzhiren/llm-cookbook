@@ -1,6 +1,6 @@
 {
     "TechPro Ultrabook": {
-        "名称": "TechPro 超极本",
+        "名称": "TechPro Ultrabook",
         "类别": "电脑和笔记本",
         "品牌": "TechPro",
         "型号": "TP-UB100",
@@ -11,7 +11,7 @@
         "价格": 799.99
     },
     "BlueWave Gaming Laptop": {
-        "名称": "BlueWave 游戏本",
+        "名称": "BlueWave Gaming Laptop",
         "类别": "电脑和笔记本",
         "品牌": "BlueWave",
         "型号": "BW-GL200",
@@ -67,7 +67,7 @@
     },
     "MobiTech PowerCase": {
         "名称": "MobiTech PowerCase",
-        "类别": "专业手机",
+        "类别": "智能手机和配件",
         "品牌": "MobiTech",
         "型号": "MT-PC20",
         "保修期": "1 year",
@@ -78,7 +78,7 @@
     },
     "SmartX MiniPhone": {
         "名称": "SmartX MiniPhone",
-        "类别": "专业手机",
+        "类别": "智能手机和配件",
         "品牌": "SmartX",
         "型号": "SX-MP5",
         "保修期": "1 year",
@@ -89,7 +89,7 @@
     },
     "MobiTech Wireless Charger": {
         "名称": "MobiTech Wireless Charger",
-        "类别": "专业手机",
+        "类别": "智能手机和配件",
         "品牌": "MobiTech",
         "型号": "MT-WC10",
         "保修期": "1 year",
@@ -100,7 +100,7 @@
     },
     "SmartX EarBuds": {
         "名称": "SmartX EarBuds",
-        "类别": "专业手机",
+        "类别": "智能手机和配件",
         "品牌": "SmartX",
         "型号": "SX-EB20",
         "保修期": "1 year",
